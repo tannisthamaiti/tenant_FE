@@ -9,7 +9,7 @@ export default function TenantDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* The link connecting to your request form */}
         <Link 
-          href="/tenant/create-request" 
+          href="/dashboard/tenant/create-request" 
           className="p-6 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 transition-colors"
         >
           <h2 className="text-xl font-semibold text-blue-700">🔧 Create Maintenance Request</h2>
