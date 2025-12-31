@@ -1,8 +1,8 @@
 "use client";
-import React, { useState, ChangeEvent, FormEvent } from 'react';
+import React, { useState, useEffect, FormEvent } from 'react';
 import axios from 'axios';
+import { createClient } from '@/utils/supabase/client';
 
-// Define the interface based on your FastAPI schema
 interface MaintenanceRequest {
   tenant_id: string;
   unit_id: number;
@@ -14,30 +14,51 @@ interface MaintenanceRequest {
 }
 
 const MaintenanceRequestForm: React.FC = () => {
-  // 1. Hardcoded Values
-  const TENANT_ID = "d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44";
-  const UNIT_ID = 1;
+  // Initialize Supabase Client
+  const supabase = createClient();
+
+  // 1. Dynamic State for IDs
+  const [tenantId, setTenantId] = useState<string>('');
+  const [unitId, setUnitId] = useState<number>(1); // Ideally fetch this from DB later
+  
   const STATUS = "PENDING";
   const FAKE_PHOTO_URL = "https://example.com/placeholder-image.jpg";
 
-  // 2. State for User Inputs
+  // 2. Form Input State
   const [issueCategory, setIssueCategory] = useState<string>('');
   const [emergencyType, setEmergencyType] = useState<string>('medium');
   const [description, setDescription] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
+  // 3. Get User UUID on Load
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setTenantId(user.id); // This is your login UUID
+      }
+    };
+    getUser();
+  }, [supabase]);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    
+    if (!tenantId) {
+      alert("Please wait for user data to load or log in again.");
+      return;
+    }
+
     setLoading(true);
 
     const payload: MaintenanceRequest = {
-      tenant_id: TENANT_ID,
-      unit_id: UNIT_ID,
+      tenant_id: tenantId, // Using the UUID from Supabase
+      unit_id: unitId,
       status: STATUS,
       issue_category: issueCategory,
       emergency_type: emergencyType,
       description: description,
-      photo_url: FAKE_PHOTO_URL, // Using the fake value for now
+      photo_url: FAKE_PHOTO_URL,
     };
 
     try {
@@ -46,7 +67,6 @@ const MaintenanceRequestForm: React.FC = () => {
         payload
       );
       alert('Request created successfully!');
-      console.log('Response:', response.data);
     } catch (error) {
       console.error('Submission error:', error);
       alert('Failed to create request.');
@@ -59,8 +79,12 @@ const MaintenanceRequestForm: React.FC = () => {
     <div style={{ maxWidth: '500px', margin: '2rem auto', padding: '1rem', border: '1px solid #ddd', borderRadius: '8px' }}>
       <h2>Submit Maintenance Request</h2>
       
+      {/* Visual Debug: Shows if the ID was successfully grabbed */}
+      <p style={{ fontSize: '0.75rem', color: '#666' }}>
+        <strong>Tenant UUID:</strong> {tenantId || "Loading..."}
+      </p>
+
       <form onSubmit={handleSubmit}>
-        {/* Issue Category Dropdown */}
         <div style={{ marginBottom: '1rem' }}>
           <label style={{ display: 'block', fontWeight: 'bold' }}>Issue Category</label>
           <select 
@@ -77,7 +101,6 @@ const MaintenanceRequestForm: React.FC = () => {
           </select>
         </div>
 
-        {/* Emergency Type Dropdown */}
         <div style={{ marginBottom: '1rem' }}>
           <label style={{ display: 'block', fontWeight: 'bold' }}>Emergency Type</label>
           <select 
@@ -92,7 +115,6 @@ const MaintenanceRequestForm: React.FC = () => {
           </select>
         </div>
 
-        {/* Description Textarea */}
         <div style={{ marginBottom: '1rem' }}>
           <label style={{ display: 'block', fontWeight: 'bold' }}>Description</label>
           <textarea 
@@ -104,25 +126,13 @@ const MaintenanceRequestForm: React.FC = () => {
           />
         </div>
 
-        {/* File Upload (UI Only for now) */}
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', fontWeight: 'bold' }}>Upload Photo</label>
-          <input 
-            type="file" 
-            accept="image/*"
-            onChange={(e) => console.log('File selected:', e.target.files?.[0])}
-            style={{ marginTop: '0.5rem' }}
-          />
-          <p style={{ fontSize: '0.8rem', color: '#666' }}>Note: Photo will be sent as a fake URL string for testing.</p>
-        </div>
-
         <button 
           type="submit" 
-          disabled={loading}
+          disabled={loading || !tenantId}
           style={{ 
             width: '100%', 
             padding: '0.75rem', 
-            backgroundColor: '#00cc88', 
+            backgroundColor: !tenantId ? '#ccc' : '#00cc88', 
             color: '#fff', 
             border: 'none', 
             borderRadius: '4px',
