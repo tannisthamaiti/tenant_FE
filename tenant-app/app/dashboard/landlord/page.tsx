@@ -13,11 +13,11 @@ export default async function LandlordPage() {
     redirect('/login');
   }
 
+  // DEBUG: Check the ID in your server terminal
+  console.log("Landlord User ID found:", user.id);
+
   return (
     <div className="flex min-h-screen bg-[#f8fafc]">
-      
-
-      {/* Main Content Area */}
       <main className="flex-1 p-8">
         <div className="max-w-4xl mx-auto space-y-8">
           
@@ -31,7 +31,10 @@ export default async function LandlordPage() {
           {/* Existing Live Feed */}
           <section>
             <h2 className="text-xl font-bold text-slate-900 mb-4">Maintenance Requests</h2>
-            <LiveRequestFeed />
+            {/* FIX: Passing the user.id here */}
+            {/* Note: If your component strictly needs a number, you'll need to 
+                fetch the numeric ID from your 'landlords' table first */}
+            <LiveRequestFeed landlordId={user.id} />
           </section>
           
         </div>

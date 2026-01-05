@@ -17,6 +17,8 @@ export default function CreateTenant({ landlordId }: CreateTenantProps) {
   const [generatedLink, setGeneratedLink] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const API_BASE_URL = process.env.NEXT_PUBLIC_TENANT_API;
+
   const handleCreate = async () => {
     // Basic Validation
     if (!email || !fullName || !unitId || !leaseStart || !leaseEnd) {
@@ -37,7 +39,7 @@ export default function CreateTenant({ landlordId }: CreateTenantProps) {
 
     setIsLoading(true);
     try {
-      const res = await fetch('http://5.161.48.45:8003/landlord/create-tenant', {
+      const res = await fetch(`${API_BASE_URL}/landlord/create-tenant`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -49,7 +51,7 @@ export default function CreateTenant({ landlordId }: CreateTenantProps) {
           landlord_id: landlordId
         }),
       });
-
+      console.log("Sending Payload to Backend:", payload);
       const data = await res.json();
       if (data.setup_link) {
         setGeneratedLink(data.setup_link);

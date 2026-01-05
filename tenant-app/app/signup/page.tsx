@@ -4,17 +4,17 @@ import { createClient } from '@/utils/supabase/client'
 import Link from 'next/link'
 
 export default function SignupPage() {
-  // 1. Define State
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
-  const [role, setRole] = useState('tenant') // Default role
+  const [role, setRole] = useState('tenant') 
   const [loading, setLoading] = useState(false)
 
+  // Initialize Supabase Client
   const supabase = createClient()
+  console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL) // Check if this is defined
 
-  // 2. Define the missing handleSignup function
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -24,14 +24,15 @@ export default function SignupPage() {
       password,
       options: {
         data: { 
-          full_name: fullName,
-          role: role 
+          full_name: fullName, // 👈 Maps to new.raw_user_meta_data->>'full_name'
+          role: role,
+          phone: phone          // 👈 Maps to new.raw_user_meta_data->>'role'
         },
       },
     })
 
     if (error) {
-      alert(error.message)
+      alert(`Error: ${error.message}`)
     } else {
       alert('Success! Please check your email for the confirmation link.')
     }
@@ -57,11 +58,10 @@ export default function SignupPage() {
           />
 
           <input 
-            type="phone" placeholder="X-XXX-XXX-XXXX" required
+            type="tel" placeholder="Phone (e.g. +1234567890)" required
             className="w-full p-2 border rounded border-gray-300 focus:outline-blue-500"
             onChange={(e) => setPhone(e.target.value)}
           />
-
 
           <input 
             type="password" placeholder="Password" required
@@ -70,7 +70,7 @@ export default function SignupPage() {
           />
 
           <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-600 mb-1">I am a:</label>
+            <label className="text-sm font-semibold text-gray-600 mb-1">Account Type:</label>
             <select 
               value={role}
               onChange={(e) => setRole(e.target.value)}
@@ -85,17 +85,16 @@ export default function SignupPage() {
         </div>
 
         <button 
+          type="submit"
           disabled={loading}
           className="w-full mt-6 bg-blue-600 text-white p-2 rounded font-semibold hover:bg-blue-700 disabled:bg-blue-300"
         >
-          {loading ? 'Creating account...' : 'Sign Up'}
+          {loading ? 'Processing...' : 'Sign Up'}
         </button>
 
         <p className="mt-4 text-center text-sm text-gray-600">
           Already have an account?{' '}
-          <Link href="/login" className="text-blue-600 hover:underline">
-            Log in here
-          </Link>
+          <Link href="/login" className="text-blue-600 hover:underline">Log in</Link>
         </p>
       </form>
     </div>

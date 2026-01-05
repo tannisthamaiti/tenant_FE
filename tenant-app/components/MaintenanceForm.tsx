@@ -29,6 +29,7 @@ const MaintenanceRequestForm: React.FC = () => {
   const [emergencyType, setEmergencyType] = useState<string>('medium');
   const [description, setDescription] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const API_BASE_URL = process.env.NEXT_PUBLIC_TENANT_API;
 
   // 3. Get User UUID on Load
   useEffect(() => {
@@ -63,7 +64,7 @@ const MaintenanceRequestForm: React.FC = () => {
 
     try {
       const response = await axios.post(
-        'http://5.161.48.45:8003/api/vendor/create-request', 
+        `${API_BASE_URL}/api/vendor/create-request`, 
         payload
       );
       alert('Request created successfully!');
