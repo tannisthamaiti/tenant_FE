@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { ICardData, IApiResponse } from '../types/businessCard';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_TENANT_API;
+
 const CardScanner: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -17,10 +19,11 @@ const CardScanner: React.FC = () => {
 
     const formData = new FormData();
     formData.append('file', file);
+    
 
     try {
       // Use your FastAPI endpoint (ensure it's running on port 8000)
-      const response = await fetch('http://localhost:8000/upload-card', {
+      const response = await fetch(`${API_BASE_URL}/upload-card`, {
         method: 'POST',
         body: formData,
       });
