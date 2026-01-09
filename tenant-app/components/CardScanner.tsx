@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { ICardData, IApiResponse } from './types/businessCard';
+import { ICardData, IApiResponse } from '../types/businessCard';
 
 const CardScanner: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
