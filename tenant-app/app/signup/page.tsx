@@ -76,7 +76,6 @@ export default function SignupPage() {
               onChange={(e) => setRole(e.target.value)}
               className="w-full p-2 border rounded border-gray-300 bg-white"
             >
-              <option value="tenant">Tenant</option>
               <option value="landlord">Landlord</option>
               <option value="vendor">Vendor</option>
               <option value="agent">Agent</option>
