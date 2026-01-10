@@ -22,11 +22,12 @@ const CardScanner: React.FC = () => {
   const [vendorId, setVendorId] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
   const [category, setCategory] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);     // For scanning phase
+  const [isSaving, setIsSaving] = useState<boolean>(false);   // For final save phase
   const [cardData, setCardData] = useState<ICardData | null>(null);
   const [notes, setNotes] = useState<string>("");
 
-  // 2. Fetch Vendor UUID on Load (Same as Maintenance Form)
+  // 2. Fetch Vendor UUID on Load
   useEffect(() => {
     const getVendor = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -49,7 +50,7 @@ const CardScanner: React.FC = () => {
     });
   };
 
-  // 3. Upload and Scan Logic
+  // 3. Step 1: Upload and Scan Logic (AI Extraction)
   const uploadCard = async () => {
     if (!file || !category) {
       alert("Please select a file and a service category.");
@@ -84,24 +85,51 @@ const CardScanner: React.FC = () => {
     }
   };
 
-  // 4. Save/Log Final Data
-  const saveChanges = () => {
+  // 4. Step 2: Final Save Logic (Calling /upload-lead/{vendor_id})
+  const saveChanges = async () => {
+    if (!vendorId || !cardData) return;
+
+    setIsSaving(true);
+
     const finalPayload = {
-      vendor_id: vendorId, // Tied to the logged-in user
       category: category,
       scanned_details: cardData,
       notes: notes,
       timestamp: new Date().toISOString()
     };
 
-    // Print the clean JSON to console as requested
-    console.log("Saving Final Vendor Data:", JSON.stringify(finalPayload, null, 2));
-    
-    alert(`Data for Vendor ${vendorId} logged to console!`);
+    try {
+      const response = await fetch(`${API_BASE_URL}/upload-lead/${vendorId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(finalPayload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Failed to save vendor profile.");
+      }
+
+      alert("Vendor lead saved successfully!");
+      
+      // Optional: Clear form for next scan
+      setCardData(null);
+      setFile(null);
+      setNotes("");
+      setCategory("");
+      
+    } catch (error) {
+      console.error("Error saving lead:", error);
+      alert(error instanceof Error ? error.message : "An unexpected error occurred.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto space-y-8 p-4">
       {/* Session Debug Info */}
       <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
         <span className={`h-2 w-2 rounded-full ${vendorId ? 'bg-green-500' : 'bg-amber-500'}`}></span>
@@ -156,9 +184,10 @@ const CardScanner: React.FC = () => {
               </div>
               <button 
                 onClick={saveChanges}
-                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
+                disabled={isSaving}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm disabled:bg-slate-400"
               >
-                Save Profile
+                {isSaving ? 'Saving to Database...' : 'Save Profile'}
               </button>
             </div>
 
@@ -167,7 +196,7 @@ const CardScanner: React.FC = () => {
                 {Object.entries(cardData).map(([key, value]) => (
                   <tr key={key} className="group">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-500 capitalize w-1/3 bg-slate-50/50">
-                      {key.replace('_', ' ')}
+                      {key.replace(/_/g, ' ')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                       <input 
@@ -175,7 +204,7 @@ const CardScanner: React.FC = () => {
                         value={Array.isArray(value) ? value.join(', ') : (value || '')}
                         onChange={(e) => handleFieldChange(key as keyof ICardData, e.target.value)}
                         className="w-full p-2 border border-transparent group-hover:border-slate-200 focus:border-blue-500 focus:bg-white rounded-md outline-none transition-all"
-                        placeholder={`Enter ${key.replace('_', ' ')}...`}
+                        placeholder={`Enter ${key.replace(/_/g, ' ')}...`}
                       />
                     </td>
                   </tr>
@@ -190,7 +219,7 @@ const CardScanner: React.FC = () => {
               rows={4}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add details not on the card (e.g. 'Highly recommended by Unit 402', 'Available weekends only')..."
+              placeholder="Add details not on the card (e.g. 'Highly recommended by Unit 402')..."
               className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm shadow-sm"
             />
           </div>
