@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ICardData, IApiResponse } from '../types/businessCard';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_TENANT_API;
@@ -14,12 +14,17 @@ const VENDOR_CATEGORIES = [
   "Locksmith / Doors"
 ];
 
-const CardScanner: React.FC = () => {
+interface CardScannerProps {
+  vendorId: string; // Passed from the logged-in session/parent component
+  initialCategory?: string; // Optional: prepopulate if they already have a category
+}
+
+const CardScanner: React.FC<CardScannerProps> = ({ vendorId, initialCategory }) => {
   const [file, setFile] = useState<File | null>(null);
-  const [category, setCategory] = useState<string>("");
+  const [category, setCategory] = useState<string>(initialCategory || "");
   const [loading, setLoading] = useState<boolean>(false);
   const [cardData, setCardData] = useState<ICardData | null>(null);
-  const [notes, setNotes] = useState<string>(""); // New state for notes
+  const [notes, setNotes] = useState<string>("");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) setFile(e.target.files[0]);
@@ -27,10 +32,7 @@ const CardScanner: React.FC = () => {
 
   const handleFieldChange = (key: keyof ICardData, value: string) => {
     if (!cardData) return;
-    setCardData({
-      ...cardData,
-      [key]: value
-    });
+    setCardData({ ...cardData, [key]: value });
   };
 
   const uploadCard = async () => {
@@ -43,6 +45,7 @@ const CardScanner: React.FC = () => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('category', category);
+    formData.append('vendor_id', vendorId); // Pass the ID so the backend knows who this is
 
     try {
       const response = await fetch(`${API_BASE_URL}/upload-card`, {
@@ -60,33 +63,48 @@ const CardScanner: React.FC = () => {
     }
   };
 
-  const saveChanges = () => {
-    // Construct the final JSON object
+  const saveChanges = async () => {
     const finalPayload = {
+      vendor_id: vendorId, // Critical: Ensuring the ID is tied to the payload
       ...cardData,
       category,
       notes,
-      scanned_at: new Date().toISOString()
+      updated_at: new Date().toISOString()
     };
 
-    // Print the JSON to the console
-    console.log("Final Saved JSON Data:", JSON.stringify(finalPayload, null, 2));
+    console.log("Final JSON for Vendor ID:", vendorId, finalPayload);
     
-    alert("Data logged to console. Check the browser Inspector!");
+    try {
+      // You likely want a PUT or PATCH request since the vendor already exists
+      const response = await fetch(`${API_BASE_URL}/vendors/${vendorId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(finalPayload),
+      });
+
+      if (response.ok) {
+        alert("Vendor profile updated successfully!");
+      }
+    } catch (error) {
+      console.error("Save error:", error);
+    }
   };
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
-      <h2 className="text-2xl font-bold mb-4 text-slate-800">Business Card AI Scanner</h2>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-slate-800">Update Vendor Profile</h2>
+        <p className="text-sm text-slate-500">Logged in as Vendor ID: <span className="font-mono bg-slate-100 px-1 rounded">{vendorId}</span></p>
+      </div>
       
       {/* Upload & Category Section */}
       <div className="flex flex-col gap-4 mb-8 bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-semibold text-slate-600">Vendor Category</label>
+          <label className="text-sm font-semibold text-slate-600">Service Category</label>
           <select 
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="block w-full p-2 border border-slate-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            className="block w-full p-2 border border-slate-300 rounded-lg bg-white text-sm outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="" disabled>-- Select Category --</option>
             {VENDOR_CATEGORIES.map((cat) => (
@@ -105,24 +123,23 @@ const CardScanner: React.FC = () => {
           <button 
             onClick={uploadCard}
             disabled={!file || !category || loading}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium disabled:bg-slate-400 transition-colors"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium disabled:bg-slate-400 transition-colors shadow-sm"
           >
-            {loading ? 'Processing...' : 'Scan Card'}
+            {loading ? 'Scanning...' : 'Scan New Card'}
           </button>
         </div>
       </div>
 
       {cardData && (
         <div className="space-y-6">
-          {/* Editable Data Table */}
           <div className="border rounded-xl shadow-sm bg-white overflow-hidden">
             <div className="p-4 border-b bg-slate-50 flex justify-between items-center">
-              <h3 className="font-semibold text-slate-700">Verify Scanned Data</h3>
+              <h3 className="font-semibold text-slate-700">Verify Scanned Details</h3>
               <button 
                 onClick={saveChanges}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-md text-sm font-medium transition-colors shadow-sm"
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-md text-sm font-medium transition-colors"
               >
-                Save & Log JSON
+                Update My Profile
               </button>
             </div>
             <table className="min-w-full divide-y divide-slate-200">
@@ -146,15 +163,14 @@ const CardScanner: React.FC = () => {
             </table>
           </div>
 
-          {/* Notes Section */}
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-slate-600">Additional Notes</label>
+            <label className="text-sm font-semibold text-slate-600">Notes / Bio</label>
             <textarea 
               rows={4}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add internal notes about this vendor (e.g., pricing, availability, reliability)..."
-              className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all shadow-sm"
+              placeholder="Add any additional details about your services..."
+              className="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm shadow-sm"
             />
           </div>
         </div>
