@@ -1,4 +1,5 @@
 import CardScanner from '@/components/CardScanner';
+import LeadQueryInterface from '@/components/LeadQueryInterface';
 
 export default function VendorPortalPage() {
   return (
@@ -19,6 +20,7 @@ export default function VendorPortalPage() {
           </div>
           
           <CardScanner />
+          <LeadQueryInterface/>
         </section>
 
         {/* Other Vendor Features can go here */}
