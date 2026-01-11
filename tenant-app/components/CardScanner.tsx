@@ -29,12 +29,15 @@ const CardScanner: React.FC = () => {
 
   // 2. Fetch Vendor UUID on Load
   useEffect(() => {
-    const getVendor = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setVendorId(user.id);
-      }
-    };
+  const getVendor = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      console.log("✅ Auth Success - Vendor ID:", user.id); // Add this
+      setVendorId(user.id);
+    } else {
+      console.warn("❌ Auth Failed - No user found"); // Add this
+    }
+  };
     getVendor();
   }, [supabase]);
 
