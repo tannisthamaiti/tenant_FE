@@ -34,6 +34,9 @@ const LeadQueryInterface: React.FC = () => {
       if (!response.ok) throw new Error('Failed to fetch data from the server.');
 
       const data: QueryResponse = await response.json();
+      console.log("FULL API RESPONSE:", data);
+      console.log("FIRST ROW:", data.answer?.[0]);
+      console.log("FIRST ROW FIELDS:", Object.entries(data.answer?.[0] || {}));
       setResult(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
