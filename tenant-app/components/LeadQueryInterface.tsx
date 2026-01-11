@@ -3,6 +3,9 @@
 import React, { useState } from 'react';
 import { Search, Database, AlertCircle, Loader2 } from 'lucide-react';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_TENANT_API;
+
+
 interface QueryResponse {
   answer: Array<Record<string, any>>;
   sql_used: string;
@@ -22,7 +25,7 @@ const LeadQueryInterface: React.FC = () => {
     setError(null);
 
     try {
-      const response = await fetch('/ask-leads', {
+      const response = await fetch(`${API_BASE_URL}/ask-leads`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_prompt: prompt }),
