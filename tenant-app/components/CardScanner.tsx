@@ -101,6 +101,8 @@ const CardScanner: React.FC = () => {
       timestamp: new Date().toISOString()
     };
 
+    console.log("🚀 Sending Payload to Backend:", JSON.stringify(finalPayload, null, 2));
+
     try {
       const response = await fetch(`${API_BASE_URL}/upload-lead/${vendorId}`, {
         method: 'POST',
